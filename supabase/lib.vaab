@@ -1,0 +1,5 @@
+# Supabase riff — REST helpers will grow here as http auth lands.
+
+to name() returns Text {
+    return "supabase"
+}

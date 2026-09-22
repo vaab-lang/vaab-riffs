@@ -1,0 +1,5 @@
+riff supabase 0.1.0
+description Supabase REST helpers for Vaab apps
+by vaab
+licence MIT
+needs vaab at 0.1
