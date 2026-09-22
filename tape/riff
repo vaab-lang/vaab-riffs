@@ -1,0 +1,5 @@
+riff tape 0.1.0
+description Static file helpers for Vaab HTTP servers
+by vaab-lang
+licence MIT
+needs vaab at 0.1
