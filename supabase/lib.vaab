@@ -1,5 +1,88 @@
-# Supabase riff — REST helpers will grow here as http auth lands.
+# Supabase PostgREST client for Vaab.
+#
+# Your app must define HttpError (http.send fails with it):
+#
+#   choice HttpError {
+#       Failed(message: Text)
+#   }
+#
+# Set SUPABASE_URL and SUPABASE_ANON_KEY, then:
+#
+#   let client = match supabase.connect() { ... }
+#   let rows = match supabase.fetch(client, "tasks") { ... }
 
-to name() returns Text {
-    return "supabase"
+choice SupabaseError {
+    Missing(name: Text)
+    Request(message: Text)
+}
+
+type Client {
+    url: Text
+    key: Text
+}
+
+to connect() returns Client or fails SupabaseError {
+    match require_env("SUPABASE_URL") {
+        when success url then match require_env("SUPABASE_ANON_KEY") {
+            when success key then { return success Client.new(url: url, key: key) }
+            when failure error then { return failure error }
+        }
+        when failure error then { return failure error }
+    }
+}
+
+to connect_with(url: Text, key: Text) returns Client {
+    return Client.new(url: url, key: key)
+}
+
+to require_env(name: Text) returns Text or fails SupabaseError {
+    match env.get(name) {
+        when found value then { return success value }
+        when nothing then { return failure SupabaseError.Missing(name) }
+    }
+}
+
+to table_url(client: Client, table: Text) returns Text {
+    return "{client.url}/rest/v1/{table}"
+}
+
+to auth_headers(client: Client) returns map of Text to Text {
+    return {
+        "apikey": client.key,
+        "Authorization": "Bearer {client.key}",
+        "Content-Type": "application/json",
+    }
+}
+
+to rest(client: Client, method: Text, url: Text, body: Text) returns Text or fails SupabaseError {
+    match http.send(method, url, body, auth_headers(client)) {
+        when success response then { return success response }
+        when failure error then match error {
+            when Failed(message) then { return failure SupabaseError.Request(message) }
+        }
+    }
+}
+
+to fetch(client: Client, table: Text) returns Text or fails SupabaseError {
+    return rest(client, "GET", table_url(client, table), "")
+}
+
+to fetch_where(client: Client, table: Text, query: Text) returns Text or fails SupabaseError {
+    let url = "{table_url(client, table)}?{query}"
+    return rest(client, "GET", url, "")
+}
+
+to insert_row(client: Client, table: Text, body: Text) returns Text or fails SupabaseError {
+    let url = table_url(client, table)
+    return rest(client, "POST", url, body)
+}
+
+to patch_where(client: Client, table: Text, query: Text, body: Text) returns Text or fails SupabaseError {
+    let url = "{table_url(client, table)}?{query}"
+    return rest(client, "PATCH", url, body)
+}
+
+to remove_where(client: Client, table: Text, query: Text) returns Text or fails SupabaseError {
+    let url = "{table_url(client, table)}?{query}"
+    return rest(client, "DELETE", url, "")
 }

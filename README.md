@@ -1,18 +1,23 @@
 # vaab-riffs
 
-Official and community **riffs** for [Vaab](https://github.com/vaab-lang/vaab): plain-English packages that wrap APIs and utilities.
+Official **riffs** for [Vaab](https://github.com/vaab-lang/vaab): plain-English packages for vendor APIs and shared utilities.
 
-A riff is a directory with:
+## Install a riff
 
-- `riff` — manifest (name, version, dependencies)
-- `lib.vaab` — the library source
-
-Use one from your app:
+In your app's `main.vaab`:
 
 ```vaab
-need supabase from ../vaab-riffs/supabase
+choice HttpError {
+    Failed(message: Text)
+}
 
-print(supabase.rest_get("https://xyz.supabase.co", "service-role-key", "/rest/v1/tasks"))
+need supabase from "../vaab-riffs/supabase"
+```
+
+In your app's `riff` manifest:
+
+```
+need supabase from "../vaab-riffs/supabase"
 ```
 
 Then:
@@ -22,10 +27,63 @@ vaab gather
 vaab run main.vaab
 ```
 
-## Riffs
+## supabase
 
-| Riff | Description |
-|------|-------------|
-| [supabase](./supabase/) | Supabase REST helpers via `http.get` / `http.post` |
+PostgREST client over Vaab's `http.send` builtin.
 
-Registry fetch (`need json from ada`) is not wired yet — use path dependencies for now.
+**Environment**
+
+| Variable | Purpose |
+|----------|---------|
+| `SUPABASE_URL` | Project URL, e.g. `https://xyz.supabase.co` |
+| `SUPABASE_ANON_KEY` | Anon or service-role key |
+
+**Example**
+
+```vaab
+choice HttpError {
+    Failed(message: Text)
+}
+
+need supabase from "../vaab-riffs/supabase"
+
+to main() {
+    let client = match supabase.connect_with(
+        "https://your-project.supabase.co",
+        "your-anon-key",
+    ) {
+        when success value then value
+        when failure error then match error {
+            when Missing(name) then {
+                print("missing {name}")
+                return
+            }
+            when Request(message) then {
+                print("request failed: {message}")
+                return
+            }
+        }
+    }
+
+    match supabase.fetch(client, "tasks") {
+        when success rows then print(rows)
+        when failure error then print("could not load tasks")
+    }
+}
+
+main()
+```
+
+**API**
+
+| Call | Purpose |
+|------|---------|
+| `supabase.connect()` | Read `SUPABASE_URL` + `SUPABASE_ANON_KEY` from env |
+| `supabase.connect_with(url, key)` | Explicit credentials |
+| `supabase.fetch(client, table)` | `GET /rest/v1/{table}` |
+| `supabase.fetch_where(client, table, query)` | GET with query string, e.g. `id=eq.abc` |
+| `supabase.insert_row(client, table, json)` | POST row JSON |
+| `supabase.patch_where(client, table, query, json)` | PATCH rows |
+| `supabase.remove_where(client, table, query)` | DELETE rows |
+
+Registry installs (`need supabase from vaab`) land when `riffs.vaab.dev` is live. Path deps work today.
