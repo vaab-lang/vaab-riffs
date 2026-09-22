@@ -2,6 +2,8 @@
 
 Official **riffs** for [Vaab](https://github.com/vaab-lang/vaab): plain-English packages for vendor APIs and shared utilities.
 
+Riffs that have grown into their own repos (for example [tape](https://github.com/vaab-lang/tape)) still install with `riff install <name>` — the toolchain checks `github.com/vaab-lang/<name>` first, then this catalog.
+
 ## Install a riff
 
 In your app's `main.vaab`:
@@ -86,39 +88,11 @@ main()
 | `supabase.patch_where(client, table, query, json)` | PATCH rows |
 | `supabase.remove_where(client, table, query)` | DELETE rows |
 
-## tape
+## Other official riffs
 
-Static file helpers for Vaab HTTP servers. Path resolution with traversal guards and MIME hints for `reply file` routes.
-
-**Example**
-
-```vaab
-need tape
-
-serve on port 8787 {
-    route get "/{*filepath}" {
-        match tape.resolve("web/dist", filepath) {
-            when success target then reply file target
-            when failure error then match error {
-                when Unsafe(requested) then {
-                    reply text "forbidden" as "text/plain; charset=utf-8" status 403
-                }
-                when NotFound(requested) then {
-                    reply text "not found" as "text/plain; charset=utf-8" status 404
-                }
-            }
-        }
-    }
-}
-```
-
-**API**
-
-| Call | Purpose |
-|------|---------|
-| `tape.for_path(root, requested)` | Build a path under `root`; returns `{root}/__forbidden__` when unsafe |
-| `tape.resolve(root, requested)` | Same, but returns `success` or `failure StaticError` |
-| `tape.mime_for(path)` | Guess a content type from the file extension |
+| Riff | Repo |
+|------|------|
+| [tape](https://github.com/vaab-lang/tape) | Static file helpers for Vaab HTTP servers |
 
 Install with `riff install tape`, then `need tape` in your app.
 
