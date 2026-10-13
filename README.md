@@ -2,7 +2,7 @@
 
 Official **riffs** for [Vaab](https://github.com/vaab-lang/vaab): plain-English packages for vendor APIs and shared utilities.
 
-Riffs that have grown into their own repos (for example [tape](https://github.com/vaab-lang/tape)) still install with `riff install <name>` — the toolchain checks `github.com/vaab-lang/<name>` first, then this catalog.
+Riffs that have grown into their own repos (for example [tape](https://github.com/vaab-lang/tape), [rig](https://github.com/vaab-lang/rig)) still install with `riff install <name>` — the toolchain checks `github.com/vaab-lang/<name>` first, then this catalog.
 
 ## Install a riff
 
